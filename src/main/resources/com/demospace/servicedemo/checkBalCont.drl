@@ -1,0 +1,56 @@
+package com.demospace.servicedemo;
+
+
+import com.demospace.servicedemo.service;
+import com.demospace.servicedemo.serviceRequest;
+
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.time.temporal.ChronoUnit;
+import java.time.LocalDate;
+
+function boolean checkDate(String endDate) {
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date passedDate = dateFormat.parse(endDate);
+    System.out.println("Passed Date" + (String) endDate + " >= " + dateFormat.format(new Date()));
+    return passedDate.after(new Date());
+}
+
+
+function double getBalance(double monthlyPay, String contractEndDate) {
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    String currDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+    Date passedDate = dateFormat.parse(contractEndDate);
+    if(passedDate.after(new Date())) {
+        return (Math.ceil((double) ChronoUnit.DAYS.between(LocalDate.parse(currDate), LocalDate.parse(contractEndDate))/30) * monthlyPay);
+    } else {
+        return 0.0;
+    }
+
+}
+
+
+rule "checkEndDate"
+  ruleflow-group "dateBalanceVali"
+  dialect "mvel"
+  when
+    sr: serviceRequest()
+    serv: service(service.endDate != null)
+  then
+    sr.setContractActive(checkDate(serv.endDate));
+    System.out.println("In Chk ED");
+  end
+  
+  
+  rule "checkBalance"
+  ruleflow-group "dateBalanceVali"
+  dialect "mvel"
+  when
+    sr: serviceRequest()
+    serv: service(service.endDate != null)
+  then
+    sr.setAccBal(getBalance(serv.monthlyPay, serv.endDate));
+    System.out.println("In Chk Bal");
+  end
+  
+  
